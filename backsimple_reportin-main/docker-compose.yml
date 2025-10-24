@@ -1,0 +1,37 @@
+services:
+  backend:
+    build: .
+    container_name: reportin_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - ./uploads:/app/uploads
+    depends_on:
+      db: # <-- MODIFICACIÓN AQUÍ
+        condition: service_healthy # <-- ESPERA A QUE EL HEALTHCHECK PASE
+    restart: always
+
+  db:
+    image: postgres:16
+    container_name: reportin_db
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "1234"
+      POSTGRES_DB: "reportin_db"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck: # <-- SECCIÓN NUEVA
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reportin_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  postgres_data:
+    driver: local
